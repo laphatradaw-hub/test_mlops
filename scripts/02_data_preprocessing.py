@@ -1,8 +1,9 @@
 import os
  
 import mlflow
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
 import pandas as pd
-from sklearn.datasets import load_wine
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
  
  
@@ -12,7 +13,7 @@ def preprocess_data(test_size=0.25, random_state=42):
     and logs the resulting datasets as artifacts in MLflow.
     """
     # Set the experiment name
-    mlflow.set_experiment("Wine Quality - Data Preprocessing")
+    mlflow.set_experiment("breast_cancer- Data Preprocessing")
  
     with mlflow.start_run() as run:
         run_id = run.info.run_id
@@ -20,8 +21,8 @@ def preprocess_data(test_size=0.25, random_state=42):
         mlflow.set_tag("ml.step", "data_preprocessing")
  
         # 1. Load data as a DataFrame
-        wine_data = load_wine(as_frame=True)
-        df = wine_data.frame
+        d = load_breast_cancer(as_frame=True)
+        df = d.frame
  
         # 2. Split the data into training and testing sets
         X = df.drop('target', axis=1)

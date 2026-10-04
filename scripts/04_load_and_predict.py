@@ -1,39 +1,77 @@
+
 import mlflow
-from sklearn.datasets import load_wine
- 
- 
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+from sklearn.datasets import load_breast_cancer
+
+
 def load_and_predict():
     """
-    Simulates a production scenario by loading a model using an alias
-    from the MLflow Model Registry and using it for prediction.
+    Load the model from MLflow Model Registry using the staging alias
+    and predict one sample from each class.
     """
-    MODEL_NAME = "wine-classifier-prod"
-    MODEL_ALIAS = "staging"  # MLflow 3 ใช้ Alias แทน Stage เดิม (เช่น staging, champion)
- 
+
+    MODEL_NAME = "cancer-classifier-prod"
+    MODEL_ALIAS = "staging"
+
+    # Mapping label number to class name
+    CLASS_NAMES = {
+        0: "malignant",
+        1: "benign"
+    }
+
     print(f"Loading model '{MODEL_NAME}' with alias '@{MODEL_ALIAS}'...")
- 
-    # Load the model from the Model Registry ด้วย Alias URI
+
+    # Load model from MLflow Model Registry using Alias
     try:
-        model = mlflow.pyfunc.load_model(model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}")
+        model = mlflow.pyfunc.load_model(
+            model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
+        )
     except mlflow.exceptions.MlflowException as e:
         print(f"\nError loading model: {e}")
-        print(f"Please make sure a model version has the alias '@{MODEL_ALIAS}' in the MLflow UI.")
+        print(
+            f"Please make sure a model version has "
+            f"the alias '@{MODEL_ALIAS}' in the MLflow UI."
+        )
         return
- 
-    # Prepare new sample data (as_frame=True เพื่อให้ชื่อคอลัมน์ตรงกับ signature ของโมเดล)
-    X, y = load_wine(return_X_y=True, as_frame=True)
-    sample_data = X.iloc[0:1]  # Using the first row as a sample
-    actual_label = y.iloc[0]
- 
-    # Use the loaded model to make a prediction
-    # No manual preprocessing is needed because we logged the entire pipeline
-    prediction = model.predict(sample_data)
- 
-    print("-" * 30)
-    print(f"Sample Data Features:\n{sample_data.iloc[0]}")
-    print(f"Actual Label: {actual_label}")
-    print(f"Predicted Label: {prediction[0]}")
-    print("-" * 30)
- 
+
+    # Load Breast Cancer dataset
+    X, y = load_breast_cancer(
+        return_X_y=True,
+        as_frame=True
+    )
+
+    # Find the first sample of each class
+    malignant_index = y[y == 0].index[0]
+    benign_index = y[y == 1].index[0]
+
+    samples = [
+        ("malignant", malignant_index),
+        ("benign", benign_index)
+    ]
+
+    print("-" * 50)
+
+    for expected_class, index in samples:
+
+        sample_data = X.loc[[index]]
+        actual_label = y.loc[index]
+
+        # Predict
+        prediction = model.predict(sample_data)
+        predicted_label = int(prediction[0])
+
+        # Convert number to class name
+        actual_name = CLASS_NAMES[actual_label]
+        predicted_name = CLASS_NAMES[predicted_label]
+
+        # Check whether prediction is correct
+        is_correct = actual_name == predicted_name
+
+        print(f"Actual Class    : {actual_name}")
+        print(f"Predicted Class : {predicted_name}")
+        print(f"Correct?        : {'Yes' if is_correct else 'No'}")
+        print("-" * 50)
+
+
 if __name__ == "__main__":
     load_and_predict()

@@ -1,5 +1,6 @@
 import mlflow
-from sklearn.datasets import load_wine
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+from sklearn.datasets import load_breast_cancer
  
  
 def validate_data():
@@ -8,25 +9,31 @@ def validate_data():
     and logs the results to MLflow.
     """
     # Set the experiment name for this step
-    mlflow.set_experiment("Wine Quality - Data Validation")
+    mlflow.set_experiment("breast_cancer - Data Validation")
  
     with mlflow.start_run():
         print("Starting data validation run...")
         mlflow.set_tag("ml.step", "data_validation")
  
         # 1. Load data as a Pandas DataFrame
-        wine_data = load_wine(as_frame=True)
-        df = wine_data.frame
+        d = load_breast_cancer(as_frame=True)
+        df = d.frame
+        print(d.frame.shape)
+        print(d.target_names)
+        print(d.frame['target'].value_counts(normalize=True))
         print("Data loaded successfully.")
  
         # 2. Perform simple validation checks
         num_rows, num_cols = df.shape
         num_classes = df['target'].nunique()
         missing_values = df.isnull().sum().sum()
- 
+        balance = df["target"].value_counts(normalize=True).min()
+
         print(f"Dataset shape: {num_rows} rows, {num_cols} columns")
         print(f"Number of classes: {num_classes}")
         print(f"Missing values: {missing_values}")
+        print(f"class balance(min): {balance:.4f}")
+
  
         # 3. Log validation results to MLflow
         mlflow.log_metric("num_rows", num_rows)
@@ -36,7 +43,9 @@ def validate_data():
  
         # Check if the data passes our defined criteria
         validation_status = "Success"
-        if missing_values > 0 or num_classes < 3:
+        if (missing_values > 0 
+            or num_classes != 2
+            or balance < 0.20):
             validation_status = "Failed"
  
         mlflow.log_param("validation_status", validation_status)

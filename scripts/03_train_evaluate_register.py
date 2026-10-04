@@ -5,11 +5,13 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 from mlflow import MlflowClient  # ใช้สำหรับตั้ง Alias ของโมเดล (MLflow 3)
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
 from mlflow.artifacts import download_artifacts
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+
  
  
 def train_evaluate_register(preprocessing_run_id, C=1.0):
@@ -19,8 +21,8 @@ def train_evaluate_register(preprocessing_run_id, C=1.0):
     the performance threshold.
     """
     ACCURACY_THRESHOLD = 0.95
-    MODEL_NAME = "wine-classifier-prod"
-    mlflow.set_experiment("Wine Quality - Model Training")
+    MODEL_NAME = "cancer-classifier-prod"
+    mlflow.set_experiment("Breast Cancer - Model Training")
  
     with mlflow.start_run(run_name=f"logistic_regression_C_{C}"):
         print(f"Starting training run with C={C}...")
@@ -65,12 +67,16 @@ def train_evaluate_register(preprocessing_run_id, C=1.0):
  
         # 3. ประเมินผลโมเดล
         y_pred = pipeline.predict(X_test)
+        y_prob = pipeline.predict_proba(X_test)[:,1]
         acc = accuracy_score(y_test, y_pred)
+        roc_auc = roc_auc_score(y_test, y_prob)
         print(f"Accuracy: {acc:.4f}")
+        print(f"Roc_Auc_score:{roc_auc:.4f}")
  
         # 4. Log Parameters, Metrics, และ Model (Pipeline)
         mlflow.log_param("C", C)
         mlflow.log_metric("accuracy", acc)
+        mlflow.log_metric("roc_auc",roc_auc)
         # MLflow 3: ใช้ name= แทน artifact_path= (ที่เลิกใช้แล้ว)
         # และแนบ input_example เพื่อให้ MLflow สร้าง model signature ให้อัตโนมัติ
         model_info = mlflow.sklearn.log_model(
@@ -80,7 +86,7 @@ def train_evaluate_register(preprocessing_run_id, C=1.0):
         )
  
         # 5. ตรวจสอบและลงทะเบียนโมเดล
-        if acc >= ACCURACY_THRESHOLD:
+        if acc >= 0.95 and roc_auc >= 0.98:
             print(f"Model accuracy ({acc:.4f}) meets the threshold. Registering model...")
             # MLflow 3: ใช้ model_info.model_uri (รูปแบบ models:/<model_id>) ลงทะเบียนได้เลย
             registered_model = mlflow.register_model(model_info.model_uri, MODEL_NAME)
