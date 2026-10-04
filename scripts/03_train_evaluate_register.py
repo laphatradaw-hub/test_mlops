@@ -5,14 +5,14 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 from mlflow import MlflowClient  # ใช้สำหรับตั้ง Alias ของโมเดล (MLflow 3)
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
 from mlflow.artifacts import download_artifacts
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
- 
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
  
 def train_evaluate_register(preprocessing_run_id, C=1.0):
     """

@@ -1,7 +1,7 @@
 import mlflow
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
 from sklearn.datasets import load_breast_cancer
- 
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
  
 def validate_data():
     """

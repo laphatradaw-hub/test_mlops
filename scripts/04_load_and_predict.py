@@ -1,9 +1,9 @@
 
 import mlflow
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
 from sklearn.datasets import load_breast_cancer
 
-
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
 def load_and_predict():
     """
     Load the model from MLflow Model Registry using the staging alias

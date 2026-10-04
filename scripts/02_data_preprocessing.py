@@ -1,12 +1,12 @@
 import os
  
 import mlflow
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
 import pandas as pd
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
  
- 
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
 def preprocess_data(test_size=0.25, random_state=42):
     """
     Loads raw data, splits it into training and testing sets,
